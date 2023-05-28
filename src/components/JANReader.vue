@@ -15,11 +15,11 @@
 				<!-- 読取エリア -->
 				<div class="readArea ma-4">
 					<div id="cameraArea">
-						<v-img v-if="code.length" src="" alt="result" class="resultImg"></v-img>
+						<v-img v-if="code.length" src="" alt="result" id="resultImg"></v-img>
 					</div>
-					<p v-if="code.length" class="getMessage">取得できました</p>
+					<p v-if="code.length" class="getMessage mt-4">取得できました</p>
 					<p class="resultCode">{{ code }}</p>
-					<v-row justify="center" class="mx-2">
+					<v-row justify="center" class="ma-2">
 						<v-col>
 							<v-btn block color="primary" @click="startScan">Scan</v-btn>
 						</v-col>
@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import { Quagga } from 'quagga';
+import Quagga from 'quagga';
 
 export default {
 	data(){
@@ -64,8 +64,6 @@ export default {
 		//Quagga funcs
 		initQuagga(){
 			this.Quagga = Quagga;
-			// this.Quagga.onProcessed(this.onProcessed);
-			// this.Quagga.onDetected(this.onDetected);
 
 			//Quagga config
 			const config = {
@@ -79,6 +77,17 @@ export default {
 				decoder: { readers: ["ean_reader", "ean_8_reader"]}
 			};
 			this.Quagga.init(config, this.onInit);
+			this.Quagga.onProcessed(this.onProcessed);
+
+			//何故か呼び出すとundifinedが投げられてしまう
+			//this.Quagga.onDetected(this.onDetected);
+
+			this.Quagga.onDetected((success) => {
+				this.code = success.codeResult.code;
+				//const resutImg = document.querySelector("#resultImg");
+				//resutImg.setAttribute("src", this.Quagga.canvas.dom.image.toDataURL());
+				this.Quagga.stop();
+			});
 		},
 		onInit(err){
 			if(err){
@@ -88,12 +97,12 @@ export default {
 			console.info("Quagga init, Ready to Start");
 			this.Quagga.start();
 		},
-		OnDetected(success){
-			this.code = success.codeResult.code;
-			const $resutImg = document.querySelector(".resutImg");
-			$resutImg.setAttribute("src", this.Quagga.canvas.dom.image.toDataURL());
-			this.Quagga.stop();
-		},
+		// Quagga.OnDetected(success){
+		// 	this.code = success.codeResult.code;
+		// 	const $resutImg = document.querySelector(".resutImg");
+		// 	$resutImg.setAttribute("src", this.Quagga.canvas.dom.image.toDataURL());
+		// 	this.Quagga.stop();
+		// },
 		onProcessed(result){
 			const drawingCtx = this.Quagga.canvas.ctx.overlay;
 			const drawingCanvas = this.Quagga.canvas.dom.overlay;
@@ -102,8 +111,8 @@ export default {
 				if(result.boxes){
 					drawingCtx.clearRect(0,0,drawingCanvas.width, drawingCanvas.height);
 					const hasNotRead = (box) => box !== result.box;
-					result.boxes.filter(hasNotRead).foreach(box => {
-						this.Quagga.ImageDebug,drawPath(box, {x: 0, y: 1}, drawingCtx, {
+					result.boxes.filter(hasNotRead).forEach(box => {
+						this.Quagga.ImageDebug.drawPath(box, {x: 0, y: 1}, drawingCtx, {
 							color: "green",
 							lineWidth: 2,
 						});
@@ -138,3 +147,31 @@ export default {
 	}
 };
 </script>
+
+<style>
+#cameraArea {
+  overflow: hidden;
+  width: 320px;
+  height: 240px;
+  margin: auto;
+  /* position: relative; */
+  display: flex;
+  align-items: center;
+}
+#cameraArea video,
+#cameraArea canvas {
+  width: 320px;
+  height: 240px;
+}
+.resultImg {
+  width: 100%;
+}
+.resultCode {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+}
+.getMessage {
+  color: red;
+}
+</style>

@@ -6,7 +6,12 @@ import Header from './components/Header.vue'
 	<v-app>
 		<Header></Header>
 		<v-main>
-			<router-view></router-view>
+			<v-container fluid>
+				<router-view></router-view>
+			</v-container>
 		</v-main>
 	</v-app>
 </template>
+
+<script>
+</script>

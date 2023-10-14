@@ -1,9 +1,9 @@
 <script setup>
-
+import codeSearch from './codeSearch.vue';
 </script>
 
 <template>
-	<v-dialog max-width="1024px" class="text-center">
+	<v-dialog max-width="1024px" class="text-center" v-model="dialog">
 		<template v-slot:activator="{ props }">
 			<v-btn color="success" v-bind="props" class="ma-2">バーコード読取</v-btn>
 		</template>
@@ -15,23 +15,28 @@
 				<!-- 読取エリア -->
 				<div class="readArea ma-4">
 					<div id="cameraArea">
-						<v-img v-if="code.length" src="" alt="result" id="resultImg"></v-img>
+						<!-- <v-img v-show="code.length" src="" alt="result" id="resultImg"></v-img> -->
+						<div v-html="innnerHTML"></div>
 					</div>
-					<p v-if="code.length" class="getMessage mt-4">取得できました</p>
-					<p class="resultCode">{{ code }}</p>
+					<div v-if="code.length >= 2">
+						<p class="getMessage mt-4">取得成功!</p>
+						<p class="resultCode">{{ code }}</p>
+						<codeSearch btnTxt="取得したコードで検索" :read_code="code" @select-data="sendData"></codeSearch>
+						<!-- <v-btn color="secondary" class="ma-2">取得したコードで検索</v-btn> -->
+					</div>
 					<v-row justify="center" class="ma-2">
 						<v-col>
 							<v-btn block color="primary" @click="startScan">Scan</v-btn>
 						</v-col>
 						<v-col>
-							<v-btn block color="error" aria-label="close" @click.prevent.stop="stopScan">Stop</v-btn>
+							<v-btn block color="error" aria-label="close" @click.prevent.stop="resetScan">Reset</v-btn>
 						</v-col>
 					</v-row>
 				</div>
 
 
 				<v-card-actions class="justify-end">
-					<v-btn variant="text" @click="isActive.value = false">画面を閉じる</v-btn>
+					<v-btn variant="text" @click="isActive.value = false; diagReset();">画面を閉じる</v-btn>
 				</v-card-actions>
 			</v-card>
 		</template>
@@ -39,7 +44,7 @@
 </template>
 
 <script>
-import Quagga from 'quagga';
+import Quagga_lib from 'quagga';
 
 export default {
 	data(){
@@ -47,12 +52,21 @@ export default {
 			dialog: false,
 			quagga: null,
 			code: "",
+			detectCount: 0,
+			innnerHTML: "",
 		};
 	},
 	methods: {
 		//btn funcs
+		diagReset(){
+			console.log(this.code, this.code.length)
+			this.stopScan();
+			this.code = "";
+			this.innnerHTML = "";
+		},
 		startScan() {
 			this.code = "";
+			this.innnerHTML = "";
 			this.initQuagga();
 		},
 		stopScan(){
@@ -60,10 +74,15 @@ export default {
 			this.Quagga.offDetected(this.onDetected);
 			this.Quagga.stop();
 		},
+		resetScan(){
+			this.stopScan();
+			this.innnerHTML = "";
+			this.startScan();
+		},
 
 		//Quagga funcs
 		initQuagga(){
-			this.Quagga = Quagga;
+			this.Quagga = Quagga_lib;
 
 			//Quagga config
 			const config = {
@@ -71,7 +90,7 @@ export default {
 					name: "Live",
 					tyep: "LiveStream",
 					target: document.querySelector("#cameraArea"),
-					constraints: {facingMode: "enviroment" }
+					constraints: {facingMode: "environment" }
 				},
 				numOfWorkers: navigator.hardwareConcurrency || 4,
 				decoder: { readers: ["ean_reader", "ean_8_reader"]}
@@ -83,10 +102,25 @@ export default {
 			//this.Quagga.onDetected(this.onDetected);
 
 			this.Quagga.onDetected((success) => {
-				this.code = success.codeResult.code;
+
+				if(this.code === success.codeResult.code){
+					this.detectCount++;
+					console.log("detectCount="+this.detectCount+"\ncode="+this.code+"\nResult="+success.codeResult.code);
+				} else {
+					this.detectCount = 0;
+					this.code = success.codeResult.code;
+				}
+				
+				if(this.detectCount >= 3){
+					const img_url = this.Quagga.canvas.dom.image.toDataURL();
+					console.log(img_url);
+					this.innnerHTML = `<img src='${img_url}' alt='result' class="resultImg"></img>`
+
+					this.Quagga.stop();
+					this.detectCount=0;
+				}
 				//const resutImg = document.querySelector("#resultImg");
 				//resutImg.setAttribute("src", this.Quagga.canvas.dom.image.toDataURL());
-				this.Quagga.stop();
 			});
 		},
 		onInit(err){
@@ -143,6 +177,13 @@ export default {
 					);
 				}
 			}
+		},
+		sendData(data){
+			alert(data.id)
+			this.dialog = !this.dialog
+			//this.isActive.value = false
+			this.diagReset();
+			this.$emit('select-data', data)
 		}
 	}
 };
@@ -151,20 +192,27 @@ export default {
 <style>
 #cameraArea {
   overflow: hidden;
-  width: 320px;
-  height: 240px;
+  width: 75%;
+  height: 75%;
   margin: auto;
-  /* position: relative; */
+  position: relative;
   display: flex;
   align-items: center;
+  align-items: flex-start;
 }
-#cameraArea video,
+#cameraArea video{
+	width: 100%;
+	height: 100%;
+}
 #cameraArea canvas {
-  width: 320px;
-  height: 240px;
+  position: absolute;
+  width: 100%;
+  height: 100%;
 }
 .resultImg {
+  position:absolute;
   width: 100%;
+  height: 100%;
 }
 .resultCode {
   font-size: 24px;

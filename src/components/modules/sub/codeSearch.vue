@@ -63,21 +63,22 @@ export default{
 		btnTxt: {
 			default: "JAN・ISBN・ISDN検索"
 		},
-		read_code:{
-			default: ""
-		}
+		// read_code:{
+		// 	default: ""
+		// }
+		initialCode: String
 	},
-	computed:{
-		code:{
-			get(){
-				return this.read_code
-			}
-		}
-	},
+	// computed:{
+	// 	code_get:{
+	// 		get(){
+	// 			return this.read_code
+	// 		}
+	// 	}
+	// },
 	data(){
 		return{
 			//form
-			//code: "",
+			code: this.initialCode,
 			searchType: "",
 
 			//outdata
@@ -118,31 +119,15 @@ export default{
 			loading: false,
 		}
 	},
-	methods:{
-		tempdata(){
-			return new Promise((resolve, reject) => {
-				//なんらかのaxios とか
-				setTimeout(()=>{
-					const res = 
-					[{
-						id: 1,
-						code: 4549767173511,
-						title: 'THE IDOLM＠STER シンデレラガールズ 公式コンサートライト 5thLIVE TOUR Ver. 橘ありす LaLaBit Market 限',
-						author: "",
-						thumb: 'https://thumbnail.image.rakuten.co.jp/@0_mall/book/cabinet/5065/4540774145065.jpg'
-					},
-					{
-						id: 2,
-						code: 4573173314244,
-						title: '【先着特典】THE IDOLM@STER CINDERELLA MASTER Cool jewelries! 004(ジャケ柄ステッカー)',
-						author: "",
-						thumb: 'https://item-shopping.c.yimg.jp/i/l/lashinbangtsuuhan_l02671864'
-					}];
-					resolve(res)
-				},1000)
-			})
+	watch: {
+		initialCode(newCode){
+			this.code = newCode
 		},
-
+		code(newCode){
+			this.$emit('update:code', newCode)
+		}
+	},
+	methods:{
 		getdata(code, type){
 			try{
 				return axios.get(`https://lib-search-gw.ke9000.workers.dev/api/${code}/${type}/`)
@@ -167,10 +152,10 @@ export default{
 			//this.result = await this.tempdata()
 			this.loading = false
 		},
-		input_code(){
-			alert(this.read_code)
-			this.code = this.read_code
-		},
+		// input_code(){
+		// 	alert(this.read_code)
+		// 	this.code = this.read_code
+		// },
 		selectItem(item){
 			const send_item = {
 				id: item.columns.id,

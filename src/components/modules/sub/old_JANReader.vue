@@ -1,32 +1,29 @@
 <script setup>
-import Quagga_lib from 'quagga';
+import codeSearch from './codeSearch.vue';
 </script>
 
 <template>
-	<div class="text-center">
-		<!-- 移植ここから -->
-		<!-- <v-btn color="success" class="ma-2" @click.stop="janReaderDialog = true">バーコード読取</v-btn> -->
-		<!-- 移植ここまで -->
-		<v-dialog max-width="1024px" class="text-center" v-model="janReaderDialog">
+	<v-dialog max-width="1024px" class="text-center" v-model="dialog">
+		<template v-slot:activator="{ props }">
+			<v-btn color="success" v-bind="props" class="ma-2">バーコード読取</v-btn>
+		</template>
+		<template v-slot:default="{ isActive }">
 			<v-card>
 				<v-toolbar color="primary">
 					<v-toolbar-title class="pa-4 ma-2">バーコード読取ツール</v-toolbar-title>
 				</v-toolbar>
-
+				<!-- 読取エリア -->
 				<div class="readArea ma-4">
-					<!-- カメラエリア -->
 					<div id="cameraArea">
-						<div v-html="innerHTML"></div>
+						<!-- <v-img v-show="code.length" src="" alt="result" id="resultImg"></v-img> -->
+						<div v-html="innnerHTML"></div>
 					</div>
-					
-					<!-- 取得結果エリア -->
 					<div v-if="code.length >= 2">
-						<p class="getMessage mt-4">取得成功！</p>
+						<p class="getMessage mt-4">取得成功!</p>
 						<p class="resultCode">{{ code }}</p>
-						<!-- code-Search -->
+						<codeSearch btnTxt="取得したコードで検索" :read_code="code" @select-data="sendData"></codeSearch>
+						<!-- <v-btn color="secondary" class="ma-2">取得したコードで検索</v-btn> -->
 					</div>
-					
-					<!-- 操作ボタン -->
 					<v-row justify="center" class="ma-2">
 						<v-col>
 							<v-btn block color="primary" @click="startScan">Scan</v-btn>
@@ -37,54 +34,49 @@ import Quagga_lib from 'quagga';
 					</v-row>
 				</div>
 
+
 				<v-card-actions class="justify-end">
-					<v-btn variant="text" @click="closeDialog">画面を閉じる</v-btn>
+					<v-btn variant="text" @click="isActive.value = false; diagReset();">画面を閉じる</v-btn>
 				</v-card-actions>
 			</v-card>
-		</v-dialog>
-	</div>
+		</template>
+	</v-dialog>
 </template>
 
 <script>
-export default{
+import Quagga_lib from 'quagga';
+
+export default {
 	data(){
-		return{
-			//dialog control
-			//janReaderDialog: false,
-
-			//JanReader control
+		return {
+			dialog: false,
 			quagga: null,
-			code: '',
+			code: "",
 			detectCount: 0,
-			innerHTML: ""
-		}
+			innnerHTML: "",
+		};
 	},
-	props:{
-		janReaderDialog: {
-			type: Boolean,
-			default: false
-		}
-	},
-	methods:{
-		//dialog control
-
-		//dialog btn funcs
+	methods: {
+		//btn funcs
 		diagReset(){
 			console.log(this.code, this.code.length)
 			this.stopScan();
 			this.code = "";
 			this.innnerHTML = "";
 		},
-
-		//JanReader btn funcs
-		startScan(){
+		startScan() {
 			this.code = "";
 			this.innnerHTML = "";
 			this.initQuagga();
 		},
+		stopScan(){
+			this.Quagga.offProcessed(this.onProcessed);
+			this.Quagga.offDetected(this.onDetected);
+			this.Quagga.stop();
+		},
 		resetScan(){
 			this.stopScan();
-			this.innerHTML = "";
+			this.innnerHTML = "";
 			this.startScan();
 		},
 
@@ -186,20 +178,14 @@ export default{
 				}
 			}
 		},
-		stopScan(){
-			this.Quagga.offProcessed(this.onProcessed);
-			this.Quagga.offDetected(this.onDetected);
-			this.Quagga.stop();
-		},
-
-		//data emit
-		// sendData(data){
-		// 	alert(data.id)
-		// 	this.janReaderDialog = !this.janReaderDialog
-		// 	this.diagReset();
-		// 	this.$emit('obtain-code', data)
-		// }
-	},
+		sendData(data){
+			alert(data.id)
+			this.dialog = !this.dialog
+			//this.isActive.value = false
+			this.diagReset();
+			this.$emit('select-data', data)
+		}
+	}
 };
 </script>
 

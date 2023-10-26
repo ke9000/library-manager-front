@@ -1,5 +1,6 @@
 <script setup>
 import JanReader from '../modules/sub/JANReader.vue'
+import codeSearch from '../modules/sub/codeSearch.vue'
 </script>
 
 <template>
@@ -19,11 +20,9 @@ import JanReader from '../modules/sub/JANReader.vue'
 			<v-col align-self="center">
 				<v-row justify="end">
 					<!-- JAN-Reader -->
-					<JanReader :janReaderDialog="janReaderDialog"></JanReader>
-					<v-btn color="success" class="ma-2" @click.stop="janReaderDialog = true">バーコード読取</v-btn>
-
-					<!-- <v-btn color="success" class="ma-2" @click.stop="janReaderDialog = true">バーコード読取</v-btn> -->
+					<JanReader :janReaderButton="janReaderButton" @sendItemData="setItemData"></JanReader>
 					<!-- code-Search -->
+					<codeSearch :codeSearchButton="codeSearchButton" @sendItemData="setItemData"></codeSearch>
 				</v-row>
 			</v-col>
 		</v-row>
@@ -90,22 +89,20 @@ export default {
 			thumbnail_url: '',
 			base64text: '',
 
-			//tools-JanReader
-			janReaderDialog: false,
+			//tools-JanReader,
+			janReaderButton: "バーコード読取",
+
+			//tools-codeSearch
+			codeSearchButton: "コード検索"
+
 		}
 	},
 	components: {
-		JanReader
+		JanReader,
+		codeSearch
 	},
 	methods: {
 		//tools-JanReader dialog関連
-		displayJanReader(){
-			this.janReaderDialog =true
-			console.log(this.janReaderDialog)
-		},
-		updateJanReaderDialog(value) {
-			this.janReaderDialog = value;
-		},
 
 		// 画像アップロード関連
 		getPic: function(e){
@@ -137,8 +134,8 @@ export default {
 		},
 
 		// データ自動入力関連
-		setdata(data){
-			console.log(data)
+		setItemData(data){
+			console.log("JR->CR:"+data)
 
 			this.title = data.title
 			this.author = data.author

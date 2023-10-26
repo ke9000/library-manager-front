@@ -1,12 +1,11 @@
 <script setup>
 import Quagga_lib from 'quagga';
+import codeSearch from './codeSearch.vue'
 </script>
 
 <template>
 	<div class="text-center">
-		<!-- 移植ここから -->
-		<!-- <v-btn color="success" class="ma-2" @click.stop="janReaderDialog = true">バーコード読取</v-btn> -->
-		<!-- 移植ここまで -->
+		<v-btn color="success" class="ma-2" @click.stop="janReaderDialog = true">{{ janReaderButton }}</v-btn>
 		<v-dialog max-width="1024px" class="text-center" v-model="janReaderDialog">
 			<v-card>
 				<v-toolbar color="primary">
@@ -24,6 +23,11 @@ import Quagga_lib from 'quagga';
 						<p class="getMessage mt-4">取得成功！</p>
 						<p class="resultCode">{{ code }}</p>
 						<!-- code-Search -->
+						<codeSearch
+							:codeSearchButton="codeSearchButton" 
+							:intentCode="intentCode"
+							@sendItemData="sendItemData"
+						></codeSearch>
 					</div>
 					
 					<!-- 操作ボタン -->
@@ -38,7 +42,7 @@ import Quagga_lib from 'quagga';
 				</div>
 
 				<v-card-actions class="justify-end">
-					<v-btn variant="text" @click="closeDialog">画面を閉じる</v-btn>
+					<v-btn variant="text" @click="janReaderDialog = !janReaderDialog">画面を閉じる</v-btn>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
@@ -50,19 +54,25 @@ export default{
 	data(){
 		return{
 			//dialog control
-			//janReaderDialog: false,
+			janReaderDialog: false,
 
 			//JanReader control
 			quagga: null,
 			code: '',
 			detectCount: 0,
-			innerHTML: ""
+			innerHTML: "",
+
+			//intent codeSearch
+			codeSearchButton: "取得したコードで検索",
+			intentCode: "",
+
 		}
 	},
 	props:{
-		janReaderDialog: {
-			type: Boolean,
-			default: false
+		//btnName
+		janReaderButton: {
+			type: String,
+			default: "コード読取"
 		}
 	},
 	methods:{
@@ -73,13 +83,13 @@ export default{
 			console.log(this.code, this.code.length)
 			this.stopScan();
 			this.code = "";
-			this.innnerHTML = "";
+			this.innerHTML = "";
 		},
 
 		//JanReader btn funcs
 		startScan(){
 			this.code = "";
-			this.innnerHTML = "";
+			this.innerHTML = "";
 			this.initQuagga();
 		},
 		resetScan(){
@@ -122,7 +132,8 @@ export default{
 				if(this.detectCount >= 3){
 					const img_url = this.Quagga.canvas.dom.image.toDataURL();
 					console.log(img_url);
-					this.innnerHTML = `<img src='${img_url}' alt='result' class="resultImg"></img>`
+					this.innerHTML = `<img src='${img_url}' alt='result' class="resultImg"></img>`
+					this.intentCode = this.code
 
 					this.Quagga.stop();
 					this.detectCount=0;
@@ -192,13 +203,13 @@ export default{
 			this.Quagga.stop();
 		},
 
-		//data emit
-		// sendData(data){
-		// 	alert(data.id)
-		// 	this.janReaderDialog = !this.janReaderDialog
-		// 	this.diagReset();
-		// 	this.$emit('obtain-code', data)
-		// }
+		//codeSearch->JanReader->create(parent)
+		sendItemData(data){
+			console.log("CS->JR: "+data)
+			this.janReaderDialog = !this.janReaderDialog
+			this.diagReset()
+			this.$emit('sendItemData', data)
+		}
 	},
 };
 </script>
